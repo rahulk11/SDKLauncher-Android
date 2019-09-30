@@ -23,13 +23,18 @@
 
 package org.readium.sdk.android.launcher;
 
+import android.Manifest;
+import android.annotation.TargetApi;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.app.Activity;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.widget.Toast;
 
 import com.nononsenseapps.filepicker.FilePickerActivity;
@@ -87,41 +92,58 @@ public class MainActivity extends Activity {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-            case STOPSPLASH:
+                case STOPSPLASH:
 
-                File sdcard = Environment.getExternalStorageDirectory();
-                File epubpath = new File(sdcard, testPath);
-                epubpath.mkdirs();
+                    File sdcard = Environment.getExternalStorageDirectory();
+                    File epubpath = new File(sdcard, testPath);
+                    epubpath.mkdirs();
 
-                //String path = epubpath.getPath();
-                //Uri uri = Uri.parse(path);
+                    //String path = epubpath.getPath();
+                    //Uri uri = Uri.parse(path);
 
-                Intent i = new Intent(MainActivity.this.getApplicationContext(), FilePickerActivity.class);
-                // Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                    Intent i = new Intent(MainActivity.this.getApplicationContext(), FilePickerActivity.class);
+                    // Intent i = new Intent(Intent.ACTION_GET_CONTENT);
 
-                // Set these depending on your use case. These are the defaults.
-                i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false);
-                i.putExtra(FilePickerActivity.EXTRA_ALLOW_CREATE_DIR, false);
-                i.putExtra(FilePickerActivity.EXTRA_MODE, FilePickerActivity.MODE_DIR);
+                    // Set these depending on your use case. These are the defaults.
+                    i.putExtra(FilePickerActivity.EXTRA_ALLOW_MULTIPLE, false);
+                    i.putExtra(FilePickerActivity.EXTRA_ALLOW_CREATE_DIR, false);
+                    i.putExtra(FilePickerActivity.EXTRA_MODE, FilePickerActivity.MODE_DIR);
 
-                i.putExtra(FilePickerActivity.EXTRA_START_PATH, epubpath.getPath());
+                    i.putExtra(FilePickerActivity.EXTRA_START_PATH, epubpath.getPath());
 
-                startActivityForResult(i, 0);
+                    startActivityForResult(i, 0);
 
-                break;
+                    break;
             }
             super.handleMessage(msg);
         }
     };
 
+    @TargetApi(Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-        Message msg = new Message();
-        msg.what = STOPSPLASH;
-        splashHandler.sendMessageDelayed(msg, SPLASHTIME);
+
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 10);
+        } else {
+            Message msg = new Message();
+            msg.what = STOPSPLASH;
+            splashHandler.sendMessageDelayed(msg, SPLASHTIME);
+        }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 10) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Message msg = new Message();
+                msg.what = STOPSPLASH;
+                splashHandler.sendMessageDelayed(msg, SPLASHTIME);
+            }
+        }
+    }
 }

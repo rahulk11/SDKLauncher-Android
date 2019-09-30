@@ -76,7 +76,7 @@ public class ContainerList extends FragmentActivity
     private Container mContainer;
     private String mBookName; // Name of the selected book
     private String mBookPath; // Path of the selected book
-    
+
     protected abstract class SdkErrorHandlerMessagesCompleted {
         Intent m_intent = null;
 
@@ -133,7 +133,7 @@ public class ContainerList extends FragmentActivity
                 mBookName = list.get(arg2);
                 mBookPath = epubpath.getPath() + "/" + mBookName;
 
-				checkAndOpenSelectedBook();
+                checkAndOpenSelectedBook();
             }
         });
     }
@@ -148,6 +148,9 @@ public class ContainerList extends FragmentActivity
         EPub3.setSdkErrorHandler(null);
 
         if (mContainer != null) {
+            if(new File(mBookPath).isDirectory()){
+                EPub3.isDirectory = true;
+            } else EPub3.isDirectory = false;
             openSelectedBook();
         } else {
 
@@ -265,21 +268,25 @@ public class ContainerList extends FragmentActivity
         File[] files = epubpath.listFiles();
         if (files != null) {
             for (File f : files) {
-                if (!f.isFile()) {
-                    continue;
-                }
+//                if (!f.isDirectory()) { //proceed only if directory
+//                    continue;
+//                }
 
-                // Get file extension
+                // Get dir name
                 String name = f.getName();
-                String ext = FilenameUtils.getExtension(name);
-
-                if (!ext.equals("epub")) {
-                    continue;
+                if (f.isDirectory()) {
+                    if (new File(f.getAbsolutePath()
+                            + File.separator
+                            + "META-INF/container.xml").exists()) {
+                        list.add(name);
+                        Log.i("books", name);
+                    }
+                } else {
+                    String ext = FilenameUtils.getExtension(name);
+                    if (ext.equalsIgnoreCase("epub")||ext.equalsIgnoreCase("zip")) {
+                        list.add(name);
+                    }
                 }
-
-                // Only add epub files
-                list.add(name);
-                Log.i("books", name);
             }
         }
         Collections.sort(list, new Comparator<String>() {
